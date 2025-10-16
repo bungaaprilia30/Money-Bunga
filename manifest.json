@@ -1,0 +1,13 @@
+{
+  "name": "Money Bunga",
+  "short_name": "MoneyBunga",
+  "description": "Aplikasi pencatat keuangan harian dengan tampilan desktop-view on mobile",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f6f8fa",
+  "theme_color": "#FFB6C1",
+  "icons": [
+    { "src": "assets/icon.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/icon.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

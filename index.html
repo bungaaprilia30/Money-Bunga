@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#FFB6C1" />
+  <title>Money Bunga</title>
+  <link rel="icon" href="assets/icon.png" />
+  <link rel="manifest" href="manifest.json" />
+  <style>
+    :root{--bg:#f6f8fa;--card:#fff;--soft-pink:#FFB6C1;--mint:#A2E4B8;--text:#333}
+    *{box-sizing:border-box}
+    body{font-family: 'Poppins', sans-serif; margin:0; background:var(--bg); color:var(--text)}
+    header{background:linear-gradient(135deg,var(--soft-pink),var(--mint)); padding:18px; display:flex; gap:14px; align-items:center; box-shadow:0 6px 20px rgba(0,0,0,0.08)}
+    header img{width:64px; height:64px; border-radius:12px; object-fit:cover; box-shadow:0 6px 18px rgba(0,0,0,0.12)}
+    header h1{font-size:20px; margin:0}
+    main{max-width:1200px; margin:26px auto; padding:22px; background:var(--card); border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.06)}
+    .grid{display:flex; gap:18px; align-items:flex-start}
+    .col{flex:1; min-width:260px}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,0.95),var(--card)); padding:16px; border-radius:10px; box-shadow:0 6px 18px rgba(0,0,0,0.04)}
+    .card h3{margin:0; color:#666; font-size:13px}
+    .value{margin-top:10px; font-size:20px; font-weight:700}
+    .row{display:flex; gap:12px}
+    .card-inline{flex:1; padding:14px; border-radius:10px; background:#fff; box-shadow:0 4px 12px rgba(0,0,0,0.04); border-top:4px solid}
+    .income{border-color:#4CAF50}
+    .expense{border-color:#F44336}
+    .balance{border-color:#2196F3}
+    form{display:flex; flex-direction:column; gap:10px}
+    input, select {padding:10px; border-radius:8px; border:1px solid #e7e7e7}
+    button{padding:10px 14px; border-radius:8px; border:0; background:#4CAF50; color:#fff; cursor:pointer}
+    table{width:100%; border-collapse:collapse; margin-top:12px}
+    th, td{padding:10px; border-bottom:1px solid #f2f2f2; text-align:left; font-size:13px}
+    thead th{background:linear-gradient(90deg,var(--mint),var(--soft-pink)); color:#fff}
+    footer{text-align:center; color:#777; margin-top:18px; font-size:13px}
+    @media (max-width:800px){
+      html, body { width:1200px; overflow-x:auto; }
+      main { width:1100px; margin:18px auto; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="assets/icon.png" alt="Money Bunga icon" />
+    <div>
+      <h1>Money Bunga</h1>
+      <div style="font-size:13px; color:rgba(0,0,0,0.6)">Catat & pantau keuangan harian — desktop view on mobile</div>
+    </div>
+  </header>
+
+  <main>
+    <section class="grid">
+      <div class="col card">
+        <h3>Ringkasan</h3>
+        <div class="row" style="margin-top:12px">
+          <div class="card-inline income">
+            <h3>Pemasukan</h3>
+            <div class="value" id="income">Rp 0</div>
+          </div>
+          <div class="card-inline expense">
+            <h3>Pengeluaran</h3>
+            <div class="value" id="expense">Rp 0</div>
+          </div>
+          <div class="card-inline balance">
+            <h3>Saldo</h3>
+            <div class="value" id="balance">Rp 0</div>
+          </div>
+        </div>
+        <div style="margin-top:14px">
+          <small style="color:#777">Tip: Tambahkan ke layar utama (Add to Home Screen) untuk pengalaman penuh.</small>
+        </div>
+      </div>
+
+      <div class="col card">
+        <h3>Tambah Transaksi</h3>
+        <form id="formTransaksi" onsubmit="return false">
+          <input type="date" id="tanggal" required />
+          <input type="text" id="keterangan" placeholder="Keterangan (mis. Gaji, Belanja)" required />
+          <select id="tipe">
+            <option value="pemasukan">Pemasukan</option>
+            <option value="pengeluaran">Pengeluaran</option>
+          </select>
+          <input type="number" id="jumlah" placeholder="Jumlah (Rp)" min="1" required />
+          <div style="display:flex; gap:8px; margin-top:6px">
+            <button type="button" onclick="tambahTransaksi()">Tambah</button>
+            <button type="button" onclick="exportPDF()">Export (print)</button>
+            <button type="button" onclick="clearAll()" style="background:#F44336">Hapus Semua</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section style="margin-top:18px" class="card">
+      <h3>Riwayat Transaksi</h3>
+      <div style="margin-top:10px">
+        <input type="text" id="search" placeholder="Cari keterangan atau jumlah" style="width:40%; padding:8px; border-radius:8px; border:1px solid #e7e7e7; margin-bottom:10px" oninput="renderTable()" />
+      </div>
+      <div style="overflow:auto">
+        <table id="tabelTransaksi">
+          <thead>
+            <tr>
+              <th>Tanggal</th>
+              <th>Keterangan</th>
+              <th>Jenis</th>
+              <th style="text-align:right">Jumlah</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer>
+      © <span id="year"></span> Money Bunga — dibuat dengan ❤️
+    </footer>
+  </main>
+
+  <script>
+    const STORAGE_KEY = 'money_bunga_data_v1';
+    let data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    document.getElementById('tanggal').valueAsDate = new Date();
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    function tambahTransaksi(){
+      const t = document.getElementById('tanggal').value;
+      const k = document.getElementById('keterangan').value.trim();
+      const tp = document.getElementById('tipe').value;
+      const j = parseFloat(document.getElementById('jumlah').value);
+      if(!t || !k || !j || j <= 0){ alert('Mohon isi data dengan benar.'); return; }
+      data.push({ tanggal: t, keterangan: k, tipe: tp, jumlah: j });
+      saveAndRender();
+      document.getElementById('formTransaksi').reset();
+      document.getElementById('tanggal').valueAsDate = new Date();
+    }
+
+    function saveAndRender(){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      renderTable();
+      updateSummary();
+    }
+
+    function renderTable(){
+      const tbody = document.querySelector('#tabelTransaksi tbody');
+      const q = (document.getElementById('search').value || '').toLowerCase();
+      tbody.innerHTML = '';
+      data.forEach(row => {
+        if(q && !(row.keterangan.toLowerCase().includes(q) || row.jumlah.toString().includes(q))) return;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${formatDate(row.tanggal)}</td><td>${escapeHtml(row.keterangan)}</td><td>${row.tipe}</td><td style="text-align:right">Rp ${row.jumlah.toLocaleString('id-ID')}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function updateSummary(){
+      let income=0, expense=0;
+      data.forEach(d => { if(d.tipe === 'pemasukan') income += d.jumlah; else expense += d.jumlah; });
+      document.getElementById('income').textContent = 'Rp ' + income.toLocaleString('id-ID');
+      document.getElementById('expense').textContent = 'Rp ' + expense.toLocaleString('id-ID');
+      document.getElementById('balance').textContent = 'Rp ' + (income - expense).toLocaleString('id-ID');
+    }
+
+    function clearAll(){ if(confirm('Hapus semua data?')){ data = []; saveAndRender(); alert('Semua data dihapus.'); } }
+    function formatDate(d){ const dt = new Date(d); return dt.toLocaleDateString('id-ID'); }
+    function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"})[c]); }
+    function exportPDF(){ window.print(); }
+
+    // initial
+    renderTable(); updateSummary();
+
+    // register service worker
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.register('./service-worker.js').then(()=>console.log('SW registered')).catch(e=>console.warn('SW failed',e));
+    }
+  </script>
+</body>
+</html>
